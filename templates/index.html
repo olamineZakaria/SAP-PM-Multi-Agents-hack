@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP PM Multi-Agents</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .sidebar-transition {
+            transition: transform 0.3s ease;
+        }
+        .message-animation {
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing-indicator {
+            animation: pulse 1.5s infinite;
+        }
+        .theme-toggle {
+            transition: all 0.3s ease;
+        }
+        .status-indicator {
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+        
+        /* Styles pour le markdown */
+        .markdown-content {
+            line-height: 1.6;
+        }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .markdown-content h1 {
+            font-size: 1.5rem;
+            color: #1e40af;
+        }
+        .markdown-content h2 {
+            font-size: 1.25rem;
+            color: #1e40af;
+        }
+        .markdown-content h3 {
+            font-size: 1.125rem;
+            color: #374151;
+        }
+        .markdown-content p {
+            margin-bottom: 0.75rem;
+        }
+        .markdown-content ul, .markdown-content ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .markdown-content li {
+            margin-bottom: 0.25rem;
+        }
+        .markdown-content blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: #6b7280;
+        }
+        .markdown-content code {
+            background-color: #f3f4f6;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        .markdown-content pre {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .markdown-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+        .markdown-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+        }
+        .markdown-content table th {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        .markdown-content table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem;
+        }
+        .markdown-content table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .markdown-content strong {
+            font-weight: 600;
+        }
+        .markdown-content em {
+            font-style: italic;
+        }
+        .markdown-content a {
+            color: #3b82f6;
+            text-decoration: underline;
+        }
+        .markdown-content a:hover {
+            color: #1d4ed8;
+        }
+        
+        /* Styles pour les emojis */
+        .markdown-content .emoji {
+            font-size: 1.2em;
+            margin-right: 0.25rem;
+        }
+        
+        /* Styles pour les badges */
+        .markdown-content .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .markdown-content .badge-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .markdown-content .badge-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        .markdown-content .badge-warning {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .markdown-content .badge-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-bolt text-2xl text-blue-600"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">SAP PM Multi-Agents</h1>
+                </div>
+
+                <!-- Status Indicators -->
+                <div class="flex items-center space-x-4">
+                    <!-- Connection Status -->
+                    <div class="flex items-center space-x-2">
+                        <i id="connection-icon" class="fas fa-wifi text-green-500"></i>
+                        <span id="connection-status" class="text-sm text-gray-600 dark:text-gray-300">Connecté</span>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button id="theme-toggle" class="theme-toggle p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i id="theme-icon" class="fas fa-sun text-gray-600 dark:text-gray-300"></i>
+                    </button>
+
+                    <!-- Settings -->
+                    <button class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
+                        <i class="fas fa-cog text-gray-600 dark:text-gray-300"></i>
+                    </button>
+
+                    <!-- Mobile Menu -->
+                    <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                        <i class="fas fa-bars text-gray-600 dark:text-gray-300"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar-transition w-64 bg-white dark:bg-gray-800 shadow-lg transform -translate-x-full md:translate-x-0">
+            <div class="p-4">
+                <!-- Navigation -->
+                <nav class="space-y-2">
+                    <a href="#dashboard" class="nav-item flex items-center space-x-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#chat" class="nav-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-comments"></i>
+                        <span>Chat</span>
+                    </a>
+                    <a href="#agents" class="nav-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-users"></i>
+                        <span>Agents</span>
+                    </a>
+                    <a href="#stats" class="nav-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Statistiques</span>
+                    </a>
+                    <a href="#config" class="nav-item flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-cog"></i>
+                        <span>Configuration</span>
+                    </a>
+                </nav>
+
+                <!-- Session Management -->
+                <div class="mt-8">
+                    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Session Actuelle</h3>
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">Session #1234</span>
+                            <span class="status-indicator w-2 h-2 bg-green-500 rounded-full"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 space-y-2">
+                        <button class="w-full text-left text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+                            <i class="fas fa-history mr-2"></i>Historique
+                        </button>
+                        <div class="flex space-x-2">
+                            <button class="flex-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                                <i class="fas fa-download mr-1"></i>Export
+                            </button>
+                            <button class="flex-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
+                                <i class="fas fa-upload mr-1"></i>Import
+                            </button>
+                        </div>
+                        <button class="w-full text-xs bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 px-3 py-2 rounded">
+                            <i class="fas fa-plus mr-1"></i>Nouvelle Session
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-hidden">
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="h-full p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Metrics Cards -->
+                    <div class="card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                                <i class="fas fa-activity text-blue-600 dark:text-blue-300"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Requêtes Totales</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="total-requests">1,234</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
+                                <i class="fas fa-clock text-green-600 dark:text-green-300"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Temps Moyen</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="avg-response">2.3s</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900">
+                                <i class="fas fa-check-circle text-yellow-600 dark:text-yellow-300"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Taux de Succès</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="success-rate">98.5%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
+                                <i class="fas fa-users text-purple-600 dark:text-purple-300"></i>
+                            </div>
+                            <div class="ml-4">
+                                <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Agents Actifs</p>
+                                <p class="text-2xl font-bold text-gray-900 dark:text-white" id="active-agents">3</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Statut du Système</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Serveur MCP</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="status-indicator w-2 h-2 bg-green-500 rounded-full"></span>
+                                    <span class="text-sm text-green-600 dark:text-green-400">En ligne</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">SAP PM API</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="status-indicator w-2 h-2 bg-green-500 rounded-full"></span>
+                                    <span class="text-sm text-green-600 dark:text-green-400">En ligne</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">ChatGPT-4</span>
+                                <div class="flex items-center space-x-2">
+                                    <span class="status-indicator w-2 h-2 bg-green-500 rounded-full"></span>
+                                    <span class="text-sm text-green-600 dark:text-green-400">Connecté</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Performance</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                    <span>CPU</span>
+                                    <span>45%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                    <span>Mémoire</span>
+                                    <span>62%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 62%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                    <span>Réseau</span>
+                                    <span>28%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                    <div class="bg-yellow-600 h-2 rounded-full" style="width: 28%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Activité Récente</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Requête équipements</span>
+                                <span class="text-xs text-gray-400">2s</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Création notification</span>
+                                <span class="text-xs text-gray-400">5s</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Erreur connexion</span>
+                                <span class="text-xs text-gray-400">1m</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat View -->
+            <div id="chat-view" class="h-full hidden">
+                <div class="flex flex-col h-full">
+                    <!-- Chat Header -->
+                    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Chat Multi-Agents</h2>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Session #1234</span>
+                                <span class="status-indicator w-2 h-2 bg-green-500 rounded-full"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Messages will be inserted here -->
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+                        <div class="flex space-x-4">
+                            <div class="flex-1">
+                                <input type="text" id="message-input" 
+                                       class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                       placeholder="Tapez votre message...">
+                            </div>
+                            <button id="send-button" 
+                                    class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agents View -->
+            <div id="agents-view" class="h-full hidden p-6">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Agents Disponibles</h2>
+                    
+                    <!-- Search and Filters -->
+                    <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mb-6">
+                        <div class="flex-1 relative">
+                            <input type="text" id="agent-search" 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                   placeholder="Rechercher un agent...">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <button class="filter-btn active px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Tous</button>
+                            <button class="filter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm">SAP</button>
+                            <button class="filter-btn px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm">Avancé</button>
+                        </div>
+                        
+                        <button id="view-toggle" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm">
+                            <i class="fas fa-th-large"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Agents Grid -->
+                <div id="agents-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Agent Cards -->
+                    <div class="agent-card card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                                <i class="fas fa-robot text-blue-600 dark:text-blue-300"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Agent MCP</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Requêtes techniques SAP PM</p>
+                                <div class="flex items-center space-x-2 mt-2">
+                                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded">SAP</span>
+                                    <span class="text-xs text-gray-500">Utilisé 45 fois</span>
+                                </div>
+                            </div>
+                            <div class="w-4 h-4 border-2 border-gray-300 rounded"></div>
+                        </div>
+                    </div>
+
+                    <div class="agent-card card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
+                                <i class="fas fa-comments text-green-600 dark:text-green-300"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">ChatGPT-4</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Conversation naturelle</p>
+                                <div class="flex items-center space-x-2 mt-2">
+                                    <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs rounded">Avancé</span>
+                                    <span class="text-xs text-gray-500">Utilisé 123 fois</span>
+                                </div>
+                            </div>
+                            <div class="w-4 h-4 border-2 border-gray-300 rounded"></div>
+                        </div>
+                    </div>
+
+                    <div class="agent-card card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer">
+                        <div class="flex items-center space-x-4">
+                            <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
+                                <i class="fas fa-chart-line text-purple-600 dark:text-purple-300"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Agent Analytics</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Analyse de données</p>
+                                <div class="flex items-center space-x-2 mt-2">
+                                    <span class="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 text-xs rounded">Avancé</span>
+                                    <span class="text-xs text-gray-500">Utilisé 67 fois</span>
+                                </div>
+                            </div>
+                            <div class="w-4 h-4 border-2 border-gray-300 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Configuration de marked.js pour le markdown
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            headerIds: false,
+            mangle: false
+        });
+
+        // Theme Management
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const html = document.documentElement;
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                html.classList.add('dark');
+                themeIcon.className = 'fas fa-moon text-gray-300';
+            } else {
+                html.classList.remove('dark');
+                themeIcon.className = 'fas fa-sun text-gray-600';
+            }
+            localStorage.setItem('theme', theme);
+        }
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        setTheme(savedTheme);
+
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.classList.contains('dark') ? 'light' : 'dark';
+            setTheme(currentTheme);
+        });
+
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const views = ['dashboard-view', 'chat-view', 'agents-view'];
+
+        navItems.forEach((item, index) => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Update active nav item
+                navItems.forEach(nav => nav.classList.remove('bg-blue-50', 'dark:bg-blue-900', 'text-blue-700', 'dark:text-blue-300'));
+                navItems.forEach(nav => nav.classList.add('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-700', 'dark:text-gray-300'));
+                item.classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                item.classList.add('bg-blue-50', 'dark:bg-blue-900', 'text-blue-700', 'dark:text-blue-300');
+
+                // Show corresponding view
+                views.forEach(view => {
+                    document.getElementById(view).classList.add('hidden');
+                });
+                if (index < views.length) {
+                    document.getElementById(views[index]).classList.remove('hidden');
+                }
+            });
+        });
+
+        // Mobile menu
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.getElementById('sidebar');
+
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+
+        // Chat functionality
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatMessages = document.getElementById('chat-messages');
+
+        function addMessage(content, isUser = false, agents = []) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-animation flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            
+            // Convertir le markdown en HTML si ce n'est pas un message utilisateur
+            let displayContent = content;
+            if (!isUser) {
+                displayContent = marked.parse(content);
+            }
+            
+            const messageContent = `
+                <div class="flex items-start space-x-3 max-w-xs lg:max-w-md xl:max-w-lg">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 rounded-full ${isUser ? 'bg-blue-500' : 'bg-gray-500'} flex items-center justify-center">
+                            <i class="fas ${isUser ? 'fa-user' : 'fa-robot'} text-white text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-3">
+                            <div class="markdown-content text-sm text-gray-900 dark:text-white">${displayContent}</div>
+                            ${agents.length > 0 ? `
+                                <div class="mt-2 flex flex-wrap gap-1">
+                                    ${agents.map(agent => `
+                                        <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded">
+                                            ${agent}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <span class="text-xs text-gray-500">${new Date().toLocaleTimeString()}</span>
+                            <button class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onclick="copyToClipboard(this, '${content.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            messageDiv.innerHTML = messageContent;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Fonction pour copier le contenu
+        function copyToClipboard(button, content) {
+            navigator.clipboard.writeText(content).then(() => {
+                const icon = button.querySelector('i');
+                icon.className = 'fas fa-check text-green-500';
+                setTimeout(() => {
+                    icon.className = 'fas fa-copy';
+                }, 2000);
+            });
+        }
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, true);
+            messageInput.value = '';
+
+            // Show typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message-animation flex justify-start';
+            typingDiv.innerHTML = `
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center">
+                            <i class="fas fa-robot text-white text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-3">
+                        <div class="flex space-x-1">
+                            <div class="typing-indicator w-2 h-2 bg-gray-400 rounded-full"></div>
+                            <div class="typing-indicator w-2 h-2 bg-gray-400 rounded-full" style="animation-delay: 0.2s"></div>
+                            <div class="typing-indicator w-2 h-2 bg-gray-400 rounded-full" style="animation-delay: 0.4s"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Send to API
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                chatMessages.removeChild(typingDiv);
+                
+                if (data.success) {
+                    addMessage(data.message, false, data.agents_used || []);
+                } else {
+                    addMessage(`❌ **Erreur**: ${data.error}`, false, []);
+                }
+                
+                // Update dashboard after successful request
+                if (data.success) {
+                    updateDashboard();
+                }
+            })
+            .catch(error => {
+                chatMessages.removeChild(typingDiv);
+                addMessage(`❌ **Erreur de connexion**: Impossible de contacter le serveur`, false, []);
+                console.error('Erreur:', error);
+            });
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Agent selection
+        const agentCards = document.querySelectorAll('.agent-card');
+        agentCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const checkbox = card.querySelector('div:last-child');
+                checkbox.classList.toggle('bg-blue-600');
+                checkbox.classList.toggle('border-blue-600');
+                checkbox.innerHTML = checkbox.classList.contains('bg-blue-600') ? '<i class="fas fa-check text-white text-xs"></i>' : '';
+            });
+        });
+
+        // Filter functionality
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-blue-600', 'text-white');
+                    b.classList.add('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+                });
+                btn.classList.add('active', 'bg-blue-600', 'text-white');
+                btn.classList.remove('bg-gray-200', 'dark:bg-gray-700', 'text-gray-700', 'dark:text-gray-300');
+            });
+        });
+
+        // Search functionality
+        const agentSearch = document.getElementById('agent-search');
+        agentSearch.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            agentCards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                const isVisible = title.includes(searchTerm) || description.includes(searchTerm);
+                card.style.display = isVisible ? 'block' : 'none';
+            });
+        });
+
+        // Dashboard functionality
+        function updateDashboard() {
+            fetch('/api/dashboard')
+                .then(response => response.json())
+                .then(data => {
+                    // Update metrics
+                    document.getElementById('total-requests').textContent = data.metrics.total_requests.toLocaleString();
+                    document.getElementById('avg-response').textContent = data.metrics.avg_response_time + 's';
+                    document.getElementById('success-rate').textContent = data.metrics.success_rate + '%';
+                    document.getElementById('active-agents').textContent = data.metrics.active_agents;
+                })
+                .catch(error => {
+                    console.error('Erreur dashboard:', error);
+                });
+        }
+
+        // Agents functionality
+        function updateAgents() {
+            fetch('/api/agents')
+                .then(response => response.json())
+                .then(data => {
+                    const agentsGrid = document.getElementById('agents-grid');
+                    agentsGrid.innerHTML = '';
+                    
+                    data.agents.forEach(agent => {
+                        const agentCard = document.createElement('div');
+                        agentCard.className = 'agent-card card-hover bg-white dark:bg-gray-800 rounded-lg shadow p-6 cursor-pointer';
+                        agentCard.innerHTML = `
+                            <div class="flex items-center space-x-4">
+                                <div class="p-3 rounded-full bg-${agent.color}-100 dark:bg-${agent.color}-900">
+                                    <i class="${agent.icon} text-${agent.color}-600 dark:text-${agent.color}-300"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${agent.name}</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">${agent.description}</p>
+                                    <div class="flex items-center space-x-2 mt-2">
+                                        <span class="px-2 py-1 bg-${agent.color}-100 dark:bg-${agent.color}-900 text-${agent.color}-700 dark:text-${agent.color}-300 text-xs rounded">${agent.category}</span>
+                                        <span class="text-xs text-gray-500">Utilisé ${agent.usage_count} fois</span>
+                                    </div>
+                                </div>
+                                <div class="w-4 h-4 border-2 border-gray-300 rounded"></div>
+                            </div>
+                        `;
+                        agentsGrid.appendChild(agentCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreur agents:', error);
+                });
+        }
+
+        // Health check
+        function updateConnectionStatus() {
+            fetch('/api/health')
+                .then(response => response.json())
+                .then(data => {
+                    const connectionIcon = document.getElementById('connection-icon');
+                    const connectionStatus = document.getElementById('connection-status');
+                    
+                    if (data.status === 'healthy') {
+                        connectionIcon.className = 'fas fa-wifi text-green-500';
+                        connectionStatus.textContent = 'Connecté';
+                    } else {
+                        connectionIcon.className = 'fas fa-wifi text-red-500';
+                        connectionStatus.textContent = 'Déconnecté';
+                    }
+                })
+                .catch(() => {
+                    const connectionIcon = document.getElementById('connection-icon');
+                    const connectionStatus = document.getElementById('connection-status');
+                    connectionIcon.className = 'fas fa-wifi text-red-500';
+                    connectionStatus.textContent = 'Erreur';
+                });
+        }
+
+        // Update status every 30 seconds
+        updateConnectionStatus();
+        updateDashboard();
+        updateAgents();
+        setInterval(updateConnectionStatus, 30000);
+        setInterval(updateDashboard, 10000);
+    </script>
+</body>
+</html> 

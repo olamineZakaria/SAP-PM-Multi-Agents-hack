@@ -1,0 +1,22 @@
+# Configuration OpenAI (OBLIGATOIRE)
+OPENAI_API_KEY=your-openai-api-key-here
+
+# Configuration MCP Server
+MCP_SERVER_URL=http://localhost:8001
+MCP_HOST=0.0.0.0
+MCP_PORT=8001
+
+# Configuration SAP PM API
+SAP_PM_URL=http://localhost:8000
+
+# Configuration serveur SAP PM
+SAP_PM_HOST=0.0.0.0
+SAP_PM_PORT=8000
+
+# Configuration application Flask
+FLASK_SECRET_KEY=your-secret-key-here
+FLASK_HOST=0.0.0.0
+FLASK_PORT=5000
+
+# Configuration optionnelle
+DEBUG=True 
