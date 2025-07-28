@@ -1,4 +1,4 @@
-# 🤖 Agent de Maintenance Intelligente avec MCP + ChatGPT-4
+# 🤖 Agentic AI SAP PM
 
 ## 📋 Description du Projet
 
